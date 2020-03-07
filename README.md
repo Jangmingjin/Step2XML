@@ -1,52 +1,79 @@
-# step-parser
+﻿IxMilia.Step
+============
 
-## 1. Code Structure
-Totally, it has 3 parts
-- Loading file and parsing syntax
-- Bind syntax with proper item
-- Write XML with loop all items
+A portable .NET library for reading and writing STEP CAD files.
 
-![image-fileStructure](./screenshots/file_structure.png)
+## Usage
 
-### Items
-`Itmes` includes item classes
+Open a STEP file:
 
-For example, `PRODUCT_DEFINITION`, `CLOSED_SHELL` etc
+``` C#
+using System.IO;
+using IxMilia.Step;
+using IxMilia.Step.Items;
+// ...
 
-`StepReader` and `StepBinder` is reading stp file and create proper class from item classes
-### Syntax
+//------------------------------------------------------------ read from a file
+StepFile stepFile;
+using (FileStream fs = new FileStream(@"C:\Path\To\File.stp", FileMode.Open))
+{
+    stepFile = StepFile.Load(fs);
+}
 
-`Syntax` includes utility for handling syntax
+// if on >= NETStandard1.3 you can use:
+// StepFile stepFile = StepFile.Load(@"C:\Path\To\File.stp");
 
-For example, `.F.` This is boolean type and it's value is `false`
+//---------------------------------------------- or read directly from a string
+StepFile stepFile = StepFile.Parse(@"ISO-10303-21;
+HEADER;
+...
+END-ISO-103030-21;");
+//-----------------------------------------------------------------------------
 
-And also `(#1, #234, #22)` This is array type
-
-### Tokens
-`Tokens` includes utility for parsing stp file
+foreach (StepRepresentationItem item in stepFile.Items)
+{
+    switch (item.ItemType)
+    {
+        case StepItemType.Line:
+            StepLine line = (StepLine)item;
+            // ...
+            break;
+        // ...
+    }
+}
 ```
-#208=AXIS2_PLACEMENT_3D('',#381,#382,#383);
+
+Save a STEP file:
+
+``` C#
+using System.IO;
+using IxMilia.Step;
+using IxMilia.Step.Items;
+// ...
+
+StepFile stepFile = new StepFile();
+stepFile.Items.Add(new StepDirection("direction-label", 1.0, 0.0, 0.0));
+// ...
+
+//------------------------------------------------------------- write to a file
+using (FileStream fs = new FileStream(@"C:\Path\To\File.stp", FileMode.Create))
+{
+    stepFile.Save(fs);
+}
+
+// if on >= NETStandard1.3 you can use
+// stepFile.Save(@"C:\Path\To\File.stp");
+
+//------------------------------------------------------- or output as a string
+string contents = stepFile.GetContentsAsString();
 ```
-`#` - Beginning hash
-`208` -  Id
-`AXIS2_PLACEMENT_3D` - Entity Name (will be matched with item class in Items)
-the values are in bracket it attributes
 
-Token classes will be parsing above information
+## Building locally
 
-## 2. How to install on local and execute
+To build locally, install the [latest .NET Core 3.0 SDK](https://dotnet.microsoft.com/download).
 
-1. Install Visual Studio
-2. Open `StepPraser.sln`
-3. It will install Nuget Package automatically. It's C# console application based on Net.2.2 so VS will loading `MicroSoft.NetCore.App (2.2.0)
-4. Go to Project Setting and put argument manually
-![image-20200226033800862](./screenshots/image-20200226033800862.png)
-5. Click Debug for executing Current application
+## Specification
 
-## 3. How to build
+Using spec from steptools.com [here](http://www.steptools.com/library/standard/IS_final_p21e3.html).
 
-It's using NetCore 2.2 so it's useful to build with command line
-
-```
-dotnet publish -c Debug -r win10-x64
-```
+STEP Application Protocols [here](http://www.steptools.com/support/stdev_docs/express/).
